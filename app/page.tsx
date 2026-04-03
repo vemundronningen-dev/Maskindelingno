@@ -75,21 +75,43 @@ export default function DashboardPage() {
   const router = useRouter();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [dbError, setDbError] = useState(false);
+  const [settingUp, setSettingUp] = useState(false);
+  const [setupDone, setSetupDone] = useState(false);
 
-  useEffect(() => {
+  function load() {
+    setLoading(true);
+    setDbError(false);
     fetch("/api/dashboard")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error("api_error");
+        return r.json();
+      })
       .then((d) => {
+        if (!d || typeof d.totalMachines !== "number") throw new Error("bad_data");
         setData(d);
         setLoading(false);
       })
-      .catch((e) => {
-        console.error(e);
-        setError("Kunne ikke laste dashboard");
+      .catch(() => {
+        setDbError(true);
         setLoading(false);
       });
-  }, []);
+  }
+
+  useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function handleSetup() {
+    setSettingUp(true);
+    try {
+      const r = await fetch("/api/setup", { method: "POST" });
+      if (r.ok) {
+        setSetupDone(true);
+        setTimeout(() => load(), 800);
+      }
+    } finally {
+      setSettingUp(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -97,10 +119,33 @@ export default function DashboardPage() {
     );
   }
 
-  if (error || !data) {
+  if (dbError || !data) {
     return (
-      <div className="text-center text-red-400 text-sm pt-16">
-        {error ?? "Noe gikk galt"}
+      <div className="flex flex-col items-center justify-center pt-24 px-8">
+        <div className="bg-[#161B27] border border-[#1E2330] rounded-xl p-10 max-w-md w-full text-center">
+          <div className="w-12 h-12 bg-amber-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-2xl">🗄️</span>
+          </div>
+          <h2 className="text-white font-bold text-lg mb-2">
+            Databasen er ikke satt opp
+          </h2>
+          <p className="text-[#9CA3AF] text-sm mb-6 leading-relaxed">
+            Tabellene finnes ikke ennå. Klikk knappen under for å opprette dem og laste inn demo-data automatisk.
+          </p>
+          {setupDone ? (
+            <p className="text-emerald-400 text-sm">
+              ✓ Ferdig! Laster dashboard…
+            </p>
+          ) : (
+            <button
+              onClick={handleSetup}
+              disabled={settingUp}
+              className="bg-[#F59E0B] hover:bg-[#D97706] disabled:opacity-60 text-black font-semibold px-6 py-3 rounded-lg transition-colors w-full"
+            >
+              {settingUp ? "Setter opp database…" : "Sett opp database (ett klikk)"}
+            </button>
+          )}
+        </div>
       </div>
     );
   }

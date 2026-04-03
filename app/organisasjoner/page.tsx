@@ -25,8 +25,8 @@ export default function OrganisasjonerPage() {
 
   async function fetchOrgs() {
     const res = await fetch("/api/organizations");
-    const data = await res.json();
-    setOrgs(data);
+    const data = await res.json().catch(() => []);
+    setOrgs(Array.isArray(data) ? data : []);
     setLoading(false);
   }
 

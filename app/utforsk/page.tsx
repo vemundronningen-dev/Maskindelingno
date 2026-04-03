@@ -38,10 +38,9 @@ export default function UtforskPage() {
   const [filterOrg, setFilterOrg] = useState("");
 
   useEffect(() => {
-    Promise.all([
-      fetch("/api/machines").then((r) => r.json()),
-      fetch("/api/organizations").then((r) => r.json()),
-    ]).then(([m, o]) => {
+    const safe = (url: string) =>
+      fetch(url).then((r) => r.json().then((d) => Array.isArray(d) ? d : [])).catch(() => []);
+    Promise.all([safe("/api/machines"), safe("/api/organizations")]).then(([m, o]) => {
       setMachines(m);
       setOrgs(o);
       setLoading(false);

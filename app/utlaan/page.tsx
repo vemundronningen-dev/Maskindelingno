@@ -30,8 +30,8 @@ export default function UtlaanPage() {
 
   const fetchRequests = useCallback(async () => {
     const res = await fetch("/api/loan-requests");
-    const data = await res.json();
-    setRequests(data);
+    const data = await res.json().catch(() => []);
+    setRequests(Array.isArray(data) ? data : []);
     setLoading(false);
   }, []);
 

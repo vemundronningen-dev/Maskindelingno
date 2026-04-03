@@ -129,10 +129,12 @@ export default function ProsjekterPage() {
   const [submitting, setSubmitting] = useState(false);
 
   async function fetchAll() {
+    const safe = (url: string) =>
+      fetch(url).then((r) => r.json().then((d) => Array.isArray(d) ? d : [])).catch(() => []);
     const [p, m, o] = await Promise.all([
-      fetch("/api/projects").then((r) => r.json()),
-      fetch("/api/machines").then((r) => r.json()),
-      fetch("/api/organizations").then((r) => r.json()),
+      safe("/api/projects"),
+      safe("/api/machines"),
+      safe("/api/organizations"),
     ]);
     setProjects(p);
     setMachines(m);

@@ -93,10 +93,15 @@ export default function MaskinerPage() {
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const fetchData = useCallback(async () => {
+    const safe = async (url: string) => {
+      const r = await fetch(url);
+      const d = await r.json().catch(() => []);
+      return Array.isArray(d) ? d : [];
+    };
     const [m, o, p] = await Promise.all([
-      fetch("/api/machines").then((r) => r.json()),
-      fetch("/api/organizations").then((r) => r.json()),
-      fetch("/api/projects").then((r) => r.json()),
+      safe("/api/machines"),
+      safe("/api/organizations"),
+      safe("/api/projects"),
     ]);
     setMachines(m);
     setOrganizations(o);
