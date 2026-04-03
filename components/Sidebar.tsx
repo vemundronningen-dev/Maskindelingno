@@ -2,14 +2,26 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import {
+  LayoutDashboard,
+  Search,
+  KanbanSquare,
+  Truck,
+  ClipboardList,
+  Building2,
+} from "lucide-react";
+
+const links = [
+  { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/utforsk", label: "Utforsk", icon: Search },
+  { href: "/prosjekter", label: "Prosjekter", icon: KanbanSquare },
+  { href: "/maskiner", label: "Maskiner", icon: Truck },
+  { href: "/utlaan", label: "Utlån", icon: ClipboardList },
+  { href: "/organisasjoner", label: "Organisasjoner", icon: Building2 },
+];
 
 export default function Sidebar() {
   const pathname = usePathname();
-
-  const links = [
-    { href: "/", label: "Dashboard", icon: "⊞" },
-    { href: "/maskiner", label: "Maskiner", icon: "⚙" },
-  ];
 
   return (
     <aside className="w-56 min-h-screen bg-[#0A0D13] border-r border-[#1E2330] flex flex-col">
@@ -17,11 +29,12 @@ export default function Sidebar() {
         <h1 className="text-[#F59E0B] font-bold text-lg tracking-tight">
           Maskindeling
         </h1>
-        <p className="text-[#6B7280] text-xs mt-0.5">Anleggsmaskiner</p>
+        <p className="text-[#6B7280] text-xs mt-0.5">Maskinpark</p>
       </div>
 
       <nav className="flex-1 px-3 py-4 space-y-1">
         {links.map((link) => {
+          const Icon = link.icon;
           const isActive =
             link.href === "/"
               ? pathname === "/"
@@ -37,7 +50,7 @@ export default function Sidebar() {
                   : "text-[#9CA3AF] hover:text-white hover:bg-[#1E2330]"
               }`}
             >
-              <span className="text-base">{link.icon}</span>
+              <Icon size={16} />
               {link.label}
             </Link>
           );

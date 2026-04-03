@@ -1,86 +1,131 @@
 # Maskindeling
 
-Administrasjonsverktøy for anleggsmaskiner. Bygget med Next.js 14, TypeScript, Tailwind CSS, Neon (PostgreSQL) og Drizzle ORM.
+Intern plattform for deling av anleggsmaskiner på tvers av prosjekter og organisasjoner (Veidekke, kommunale etater m.fl.).
 
-## Deploy til Vercel (anbefalt)
+## Funksjoner
 
-### 1. Push til GitHub og importer til Vercel
+| Side | Beskrivelse |
+|---|---|
+| **Dashboard** `/` | Oversiktskort, tilgjengelige maskiner, forfalt vedlikehold, ventende forespørsler |
+| **Utforsk** `/utforsk` | Søk og filtrer maskiner på tvers av org/type/status, klikk for å låne |
+| **Prosjekter** `/prosjekter` | Kanban-tavle — dra maskiner mellom prosjektkolonner |
+| **Maskiner** `/maskiner` | Komplett maskinliste, legg til/slett, klikk for detaljer |
+| **Maskin** `/maskiner/[id]` | Maskindetaljer, tilgjengelighetskalender, send låneforespørsel, vedlikeholdslogg |
+| **Utlån** `/utlaan` | Godkjenn/avvis innkommende forespørsler, marker returnert |
+| **Organisasjoner** `/organisasjoner` | Administrer bedrifter og etater |
 
-1. Push koden til GitHub
-2. Gå til [vercel.com](https://vercel.com) → **New Project** → importer repoet
-3. Under **Environment Variables**, legg til:
-   ```
-   DATABASE_URL=postgresql://neondb_owner:...@....neon.tech/neondb?sslmode=require
-   ```
-4. Klikk **Deploy**
+## Tech Stack
 
-### 2. Opprett databasetabeller
+- **Next.js 14** (App Router)
+- **TypeScript**
+- **Tailwind CSS**
+- **Neon** — serverless PostgreSQL
+- **Drizzle ORM**
+- **@dnd-kit/core** — drag & drop i Kanban
 
-**Alternativ A — Neon SQL Editor (enklest)**
+## Oppsett
 
-1. Gå til [console.neon.tech](https://console.neon.tech)
-2. Velg prosjekt → **SQL Editor**
-3. Lim inn og kjør innholdet fra [`schema.sql`](./schema.sql)
-
-**Alternativ B — API-endepunkt (etter deploy)**
-
-Etter at appen er deployet, kall setup-endepunktet én gang:
-
-```bash
-curl -X POST https://din-app.vercel.app/api/setup
-```
-
-Dette oppretter tabeller **og** laster inn demo-data (3 maskiner, 2 vedlikeholdslogger).
-
----
-
-## Lokal utvikling
+### 1. Klon og installer
 
 ```bash
 git clone <repo-url>
 cd maskindelingno
 npm install
-cp .env.example .env.local   # legg inn DATABASE_URL
+```
+
+### 2. Opprett Neon-database
+
+Gå til [console.neon.tech](https://console.neon.tech), opprett et prosjekt og kopier tilkoblingsstrengen.
+
+### 3. Miljøvariabler
+
+```bash
+cp .env.example .env.local
+# Lim inn DATABASE_URL i .env.local
+```
+
+### 4. Opprett tabeller
+
+```bash
+npx drizzle-kit push
+```
+
+Eller bruk Neon SQL Editor og lim inn innholdet fra [`schema.sql`](./schema.sql).
+
+### 5. Last inn demo-data
+
+```bash
+npm run db:seed
+```
+
+Oppretter 4 organisasjoner, 2 prosjekter, 6 maskiner, 2 låneforespørsler og 2 bookinger.
+
+### 6. Start utviklingsserveren
+
+```bash
 npm run dev
 ```
 
 Åpne [http://localhost:3000](http://localhost:3000).
 
-Opprett tabeller via Neon SQL Editor eller kjør:
+---
+
+## Deploy til Vercel
+
+1. Push til GitHub
+2. Importer prosjektet på [vercel.com](https://vercel.com)
+3. Legg til `DATABASE_URL` under **Settings → Environment Variables**
+4. Deploy
+
+**Etter første deploy** — initialiser DB med ett kall (alternativ til trinn 4–5 over):
 
 ```bash
-curl -X POST http://localhost:3000/api/setup
+curl -X POST https://din-app.vercel.app/api/setup
 ```
+
+Dette oppretter tabeller og laster inn demo-data automatisk.
 
 ---
 
-## Struktur
+## Filstruktur
 
 ```
 app/
-  page.tsx                    # Dashboard
+  page.tsx                          # Dashboard
+  utforsk/page.tsx                  # Søk + bla gjennom maskiner
+  prosjekter/page.tsx               # Kanban (dnd-kit)
   maskiner/
-    page.tsx                  # Maskinliste
-    [id]/page.tsx             # Maskindetaljer
+    page.tsx                        # Maskinliste
+    [id]/page.tsx                   # Maskindetaljer + kalender + låneform
+  utlaan/page.tsx                   # Låneforespørsler
+  organisasjoner/page.tsx           # Organisasjoner
   api/
-    machines/route.ts         # GET alle, POST ny
-    machines/[id]/route.ts    # GET én, DELETE
-    maintenance/route.ts      # POST vedlikeholdslogg
-    setup/route.ts            # POST — opprett tabeller + seed
+    dashboard/route.ts
+    machines/route.ts
+    machines/[id]/route.ts
+    machines/[id]/availability/route.ts
+    projects/route.ts
+    projects/[id]/route.ts
+    organizations/route.ts
+    organizations/[id]/route.ts
+    loan-requests/route.ts
+    loan-requests/[id]/route.ts
+    maintenance/route.ts
+    bookings/route.ts
+    setup/route.ts                  # POST — opprett tabeller + seed
+
 lib/
-  db.ts                       # Drizzle/Neon-tilkobling
-  schema.ts                   # Tabelldefinisjoner
-  seed.ts                     # Seed-script (krever lokal terminal)
+  db.ts                             # Drizzle/Neon lazy connection
+  schema.ts                         # Alle tabelldefinisjoner + typer
+
 components/
   Sidebar.tsx
   StatusBadge.tsx
-schema.sql                    # SQL for Neon SQL Editor
+  MachineCard.tsx
+  AvailabilityCalendar.tsx
+
+scripts/
+  seed.ts                           # Seed-script (npm run db:seed)
+
+schema.sql                          # SQL for Neon SQL Editor
 ```
-
-## Tech Stack
-
-- **Next.js 14** (App Router, Server Components)
-- **TypeScript**
-- **Tailwind CSS**
-- **Neon** – serverless PostgreSQL
-- **Drizzle ORM**
